@@ -61,6 +61,9 @@ Stock market data API (Finnhub)
 
 GitHub for version control
 
+---
+
+
 ##Setup Instructions:
 
 Download/Git Clone repository
