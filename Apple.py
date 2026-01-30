@@ -5,11 +5,11 @@ import os
 import requests
 import datetime
 import finnhub
+import csv
 
 app = Flask(__name__)
 app.secret_key = 'codesprint_hackathon_2026'
 
-# Configuration for automatic sign-out
 app.config.update(
     SESSION_PERMANENT=False,
     SESSION_COOKIE_HTTPONLY=True,
@@ -18,6 +18,7 @@ app.config.update(
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_FILE = os.path.join(BASE_DIR, 'users.csv')
+TRADES_FILE = os.path.join(BASE_DIR, 'transactions.csv') 
 API_KEY = 'd5u4sppr01qtjet21380d5u4sppr01qtjet2138g'
 finnhub_client = finnhub.Client(api_key=API_KEY)
 
@@ -26,7 +27,6 @@ gemini_client = genai.Client(api_key='AIzaSyCK_XQtbb3rsf5CCzaWuelH00S_qdURd-U')
 # --- UTILITY FUNCTIONS ---
 
 def get_stock_price(symbol):
-    """Fetches price and returns 0.0 if failed"""
     try:
         url = f'https://finnhub.io/api/v1/quote?symbol={symbol.upper()}&token={API_KEY}'
         r = requests.get(url, timeout=5)
@@ -37,47 +37,32 @@ def get_stock_price(symbol):
         return 0.0
 
 def check_achievements(username):
-    """Safely checks for easy-to-reach achievements"""
     df = pd.read_csv(DB_FILE, dtype=str)
     user_rows = df[df['username'] == username]
     if user_rows.empty:
         return
-        
     idx = user_rows.index[0]
-    
     try:
         balance = float(df.at[idx, 'balance'])
         stocks_raw = str(df.at[idx, 'stocks_held'])
-        # Create a list of all shares held
         stocks_list = [s.strip() for s in stocks_raw.split(',')] if stocks_raw not in ['nan', 'None', '', ' '] else []
-        # Create a set to count unique types of stocks
         unique_stocks = set(stocks_list)
-        
         existing_ach_raw = str(df.at[idx, 'achievements'])
         current_achievements = [a.strip() for a in existing_ach_raw.split(',')] if existing_ach_raw not in ['nan', 'None', ''] else []
     except:
         return
 
     new_awards = []
-
-    # ACHIEVEMENT: First Buy (Own at least 1 share)
     if len(stocks_list) >= 1 and "First Buy" not in current_achievements:
         new_awards.append("First Buy")
-
-    # ACHIEVEMENT: Penny Pincher (Spent half your cash; balance below $5,000)
     if balance < 5000 and "Penny Pincher" not in current_achievements:
         new_awards.append("Penny Pincher")
-
-    # ACHIEVEMENT: Investor (Own 5 or more total shares)
     if len(stocks_list) >= 5 and "Investor" not in current_achievements:
         new_awards.append("Investor")
-
-    # ACHIEVEMENT: Diversified (Own 3 or more different types of stocks)
     if len(unique_stocks) >= 3 and "Diversified" not in current_achievements:
         new_awards.append("Diversified")
 
     if new_awards:
-        # Combine old and new, removing any 'nan' junk
         combined = [a for a in (current_achievements + new_awards) if a and a != 'nan']
         df.at[idx, 'achievements'] = ", ".join(combined)
         df.to_csv(DB_FILE, index=False)
@@ -88,18 +73,12 @@ def check_achievements(username):
 def home():
     if 'username' not in session:
         return redirect(url_for('login'))
-    
     df = pd.read_csv(DB_FILE, dtype=str)
-    
-    # Safety Check (Added this back so it doesn't crash)
     user_rows = df[df['username'] == session['username']]
     if user_rows.empty:
         session.clear()
         return redirect(url_for('login'))
-    
     user_data = user_rows.iloc[0].to_dict()
-    
-    # 1. First, do your stock calculations
     stocks_held_raw = str(user_data.get('stocks_held', ''))
     stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
     
@@ -110,17 +89,12 @@ def home():
             price_cache[ticker] = get_stock_price(ticker)
         portfolio_value += price_cache[ticker]
     
-    # 2. Fetch the "Genuine News" (Place this BEFORE the return)
     try:
         news_data = finnhub_client.general_news('general', min_id=0)[:8]
     except:
-        news_data = [] # Fallback if API fails
+        news_data = []
 
-    # 3. Use ONE return statement that sends EVERYTHING to the page
-    return render_template('index.html', 
-                           user=user_data, 
-                           portfolio_value=portfolio_value, 
-                           news=news_data)
+    return render_template('index.html', user=user_data, portfolio_value=portfolio_value, news=news_data)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -141,7 +115,6 @@ def signup():
         df = pd.read_csv(DB_FILE, dtype=str)
         if u in df['username'].values:
             return "Exists! <a href='/signup'>Try again</a>"
-        
         new_user = {'username': u, 'password': p, 'balance': '10000.0', 'stocks_held': '', 'achievements': ''}
         df = pd.concat([df, pd.DataFrame([new_user])], ignore_index=True)
         df.to_csv(DB_FILE, index=False)
@@ -152,147 +125,137 @@ def signup():
 def market():
     if 'username' not in session:
         return redirect(url_for('login'))
-    
     df = pd.read_csv(DB_FILE, dtype=str)
     user_data = df[df['username'] == session['username']].iloc[0].to_dict()
-    
     stocks_held_raw = str(user_data.get('stocks_held', ''))
     stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
-    
-    portfolio_value = 0.0
-    price_cache = {}
-    for ticker in stocks_list:
-        if ticker not in price_cache:
-            price_cache[ticker] = get_stock_price(ticker)
-        portfolio_value += price_cache[ticker]
-        
+    portfolio_value = sum(get_stock_price(ticker) for ticker in stocks_list)
     return render_template('market.html', user=user_data, portfolio_value=portfolio_value)
 
 @app.route('/leaderboard')
 def leaderboard():
     if 'username' not in session:
         return redirect(url_for('login'))
-
     df = pd.read_csv(DB_FILE, dtype=str)
-    
-    # --- ADD THIS PART TO FIX THE ERROR ---
     user_rows = df[df['username'] == session['username']]
     if user_rows.empty:
         session.clear()
         return redirect(url_for('login'))
     user_data = user_rows.iloc[0].to_dict()
-    # ---------------------------------------
-
     leaderboard_entries = []
-    price_cache = {}
-
     for _, row in df.iterrows():
         cash = float(row['balance'])
-        stocks_held_raw = str(row['stocks_held'])
-        stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', ''] else []
-        
-        portfolio_stock_value = 0.0
-        for ticker in stocks_list:
-            if ticker not in price_cache:
-                price_cache[ticker] = get_stock_price(ticker)
-            portfolio_stock_value += price_cache[ticker]
-        
-        total_net_worth = cash + portfolio_stock_value
-        leaderboard_entries.append({
-            'username': row['username'],
-            'cash': cash,
-            'stock_value': portfolio_stock_value,
-            'net_worth': total_net_worth
-        })
+        stocks_raw = str(row['stocks_held'])
+        s_list = [s.strip() for s in stocks_raw.split(',')] if stocks_raw not in ['nan', 'None', ''] else []
+        s_val = sum(get_stock_price(t) for t in s_list)
+        leaderboard_entries.append({'username': row['username'], 'cash': cash, 'stock_value': s_val, 'net_worth': cash + s_val})
+    sorted_lb = sorted(leaderboard_entries, key=lambda x: x['net_worth'], reverse=True)
+    return render_template('leaderboard.html', user=user_data, users=sorted_lb)
 
-    sorted_leaderboard = sorted(leaderboard_entries, key=lambda x: x['net_worth'], reverse=True)
-    
-    # PASS 'user=user_data' HERE
-    return render_template('leaderboard.html', user=user_data, users=sorted_leaderboard)
-
-
+@app.route('/history')
+def transaction_history():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    df_users = pd.read_csv(DB_FILE, dtype=str)
+    user_data = df_users[df_users['username'] == session['username']].iloc[0].to_dict()
+    if not os.path.exists(TRADES_FILE):
+        pd.DataFrame(columns=['timestamp','username','ticker','type','quantity','price','total_cost']).to_csv(TRADES_FILE, index=False)
+    df_trades = pd.read_csv(TRADES_FILE)
+    user_history = df_trades[df_trades['username'] == session['username']].sort_values(by='timestamp', ascending=False)
+    return render_template('history.html', user=user_data, transactions=user_history.to_dict('records'))
 
 @app.route('/buy', methods=['POST'])
 def buy():
     if 'username' not in session:
         return redirect(url_for('login'))
-
     ticker = request.form.get('ticker').upper()
     try:
         quantity = int(request.form.get('quantity', 1))
     except ValueError:
         return "Invalid quantity! <a href='/'>Go back</a>"
-        
     price = get_stock_price(ticker)
     if price <= 0:
         return "Ticker not found. <a href='/'>Go back</a>"
-
     total_cost = price * quantity
     df = pd.read_csv(DB_FILE, dtype=str)
-    
-    user_rows = df[df['username'] == session['username']]
-    if user_rows.empty:
-        return redirect(url_for('login'))
-        
-    idx = user_rows.index[0]
+    idx = df[df['username'] == session['username']].index[0]
     current_balance = float(df.at[idx, 'balance'])
     
     if current_balance >= total_cost:
         df.at[idx, 'balance'] = str(round(current_balance - total_cost, 2))
-        new_shares_string = ", ".join([ticker] * quantity)
+        new_shares = ", ".join([ticker] * quantity)
         current_stocks = str(df.at[idx, 'stocks_held'])
-        
-        if current_stocks in ['nan', 'None', '', ' ']:
-            df.at[idx, 'stocks_held'] = new_shares_string
-        else:
-            df.at[idx, 'stocks_held'] = f"{current_stocks}, {new_shares_string}"
-        
+        df.at[idx, 'stocks_held'] = new_shares if current_stocks in ['nan', 'None', '', ' '] else f"{current_stocks}, {new_shares}"
         df.to_csv(DB_FILE, index=False)
+        
+        # --- LOG TRANSACTION ---
+        file_exists = os.path.isfile(TRADES_FILE)
+        with open(TRADES_FILE, mode='a', newline='') as f:
+            fieldnames = ['timestamp', 'username', 'ticker', 'type', 'quantity', 'price', 'total_cost']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({
+                'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'username': session['username'],
+                'ticker': ticker,
+                'type': 'BUY',
+                'quantity': quantity,
+                'price': price,
+                'total_cost': round(total_cost, 2)
+            })
+        
         check_achievements(session['username'])
         return redirect(request.referrer or url_for('home'))
         
-    return f"Insufficient funds for {quantity} shares! <a href='/'>Go back</a>"
+    return f"Insufficient funds! <a href='/'>Go back</a>"
 
 @app.route('/sell', methods=['POST'])
 def sell():
     if 'username' not in session:
         return redirect(url_for('login'))
-
     ticker = request.form.get('ticker').upper()
     try:
         qty_to_sell = int(request.form.get('quantity', 1))
     except ValueError:
         return "Invalid quantity! <a href='/'>Go back</a>"
-        
     price = get_stock_price(ticker)
     if price <= 0:
         return "API Error! <a href='/'>Go back</a>"
-
     df = pd.read_csv(DB_FILE, dtype=str)
-    user_rows = df[df['username'] == session['username']]
-    if user_rows.empty:
-        return redirect(url_for('login'))
-        
-    idx = user_rows.index[0]
-    stocks_held_raw = str(df.at[idx, 'stocks_held'])
-    current_stocks = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', ''] else []
-    
-    owned_count = current_stocks.count(ticker)
+    idx = df[df['username'] == session['username']].index[0]
+    stocks_raw = str(df.at[idx, 'stocks_held'])
+    stocks = [s.strip() for s in stocks_raw.split(',')] if stocks_raw not in ['nan', 'None', ''] else []
+    owned_count = stocks.count(ticker)
     
     if owned_count >= qty_to_sell:
         for _ in range(qty_to_sell):
-            current_stocks.remove(ticker)
-        df.at[idx, 'stocks_held'] = ', '.join(current_stocks)
+            stocks.remove(ticker)
+        df.at[idx, 'stocks_held'] = ', '.join(stocks)
         current_balance = float(df.at[idx, 'balance'])
         df.at[idx, 'balance'] = str(round(current_balance + (price * qty_to_sell), 2))
-        # Trigger the Quick Seller badge manually on the first sale
+        
+        # --- LOG TRANSACTION (CORRECTED INDENTATION & TYPE) ---
+        file_exists = os.path.isfile(TRADES_FILE)
+        with open(TRADES_FILE, mode='a', newline='') as f:
+            fieldnames = ['timestamp', 'username', 'ticker', 'type', 'quantity', 'price', 'total_cost']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow({
+                'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'username': session['username'],
+                'ticker': ticker,
+                'type': 'SELL',
+                'quantity': qty_to_sell,
+                'price': price,
+                'total_cost': round(price * qty_to_sell, 2)
+            })
+        
         existing_achs = str(df.at[idx, 'achievements'])
         if "Quick Seller" not in existing_achs:
-            # Add it to the string, cleaning up leading commas
-            if existing_achs in ['nan', 'None', '']:
-                df.at[idx, 'achievements'] = "Quick Seller"
-            else:
-                df.at[idx, 'achievements'] = f"{existing_achs}, Quick Seller"
+            df.at[idx, 'achievements'] = "Quick Seller" if existing_achs in ['nan', 'None', ''] else f"{existing_achs}, Quick Seller"
+        
         df.to_csv(DB_FILE, index=False)
         check_achievements(session['username'])
         return redirect(request.referrer or url_for('home'))
