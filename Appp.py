@@ -1,7 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session
+from google import genai
 import pandas as pd
 import os
 import requests
+import datetime
+import finnhub
 
 app = Flask(__name__)
 app.secret_key = 'codesprint_hackathon_2026'
@@ -16,6 +19,9 @@ app.config.update(
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_FILE = os.path.join(BASE_DIR, 'users.csv')
 API_KEY = 'd5u4sppr01qtjet21380d5u4sppr01qtjet2138g'
+finnhub_client = finnhub.Client(api_key=API_KEY)
+
+gemini_client = genai.Client(api_key='AIzaSyCK_XQtbb3rsf5CCzaWuelH00S_qdURd-U')
 
 def get_stock_price(symbol):
     """Fetches price and returns 0.0 if failed"""
@@ -136,6 +142,63 @@ def leaderboard():
     sorted_leaderboard = sorted(leaderboard_entries, key=lambda x: x['net_worth'], reverse=True)
     
     return render_template('leaderboard.html', users=sorted_leaderboard)
+
+
+@app.route('/news')
+def news_page():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    # 1. Fetch User Data for Sidebar Trading
+    df = pd.read_csv(DB_FILE, dtype=str)
+    user_data = df[df['username'] == session['username']].iloc[0].to_dict()
+    
+    # Calculate Portfolio Value
+    stocks_held_raw = str(user_data.get('stocks_held', ''))
+    stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
+    
+    portfolio_value = 0.0
+    price_cache = {}
+    for ticker in stocks_list:
+        if ticker not in price_cache:
+            price_cache[ticker] = get_stock_price(ticker)
+        portfolio_value += price_cache[ticker]
+
+    # 2. Fetch Finnhub News & Gemini Analysis
+    try:
+        raw_news = finnhub_client.general_news('general', min_id=0)
+        headlines = [item['headline'] for item in raw_news[:10]]
+        
+        # We ask Gemini to specifically identify Sentiment and Key Points
+        prompt = (
+            f"Analyze these market headlines: {headlines}. "
+            "1. Start with one word: 'BULLISH', 'BEARISH', or 'NEUTRAL'. "
+            "2. Provide 3-4 bite-sized bullet points summarizing the news. "
+            "Use HTML tags like <b> and <ul> for formatting."
+        )
+        
+        response = gemini_client.models.generate_content(
+            model="models/gemini-1.5-flash", 
+            contents=prompt
+        )
+        
+        # Split sentiment from the summary text
+        full_text = response.text
+        sentiment = "NEUTRAL"
+        if "BULLISH" in full_text.upper(): sentiment = "BULLISH"
+        elif "BEARISH" in full_text.upper(): sentiment = "BEARISH"
+        
+        summary = full_text.replace("BULLISH", "").replace("BEARISH", "").replace("NEUTRAL", "")
+    except Exception as e:
+        sentiment = "UNKNOWN"
+        summary = f"Error loading news: {str(e)}"
+
+    return render_template('news.html', 
+                           user=user_data, 
+                           portfolio_value=portfolio_value, 
+                           summary=summary, 
+                           sentiment=sentiment,
+                           now=datetime.datetime.now())
 
 @app.route('/buy', methods=['POST'])
 def buy():
