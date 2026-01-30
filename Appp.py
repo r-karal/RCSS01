@@ -6,7 +6,7 @@ import requests
 app = Flask(__name__)
 app.secret_key = 'codesprint_hackathon_2026'
 
-# Configuration for automatic sign-out
+# Config for automatic sign-out
 app.config.update(
     SESSION_PERMANENT=False,
     SESSION_COOKIE_HTTPONLY=True,
@@ -35,7 +35,7 @@ def home():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # Force everything to strings so Pandas doesn't guess "float64"
+    # forcing to string for pandas
     df = pd.read_csv(DB_FILE, dtype=str)
     user_data = df[df['username'] == session['username']]
     
@@ -65,7 +65,7 @@ def signup():
         if u in df['username'].values:
             return "Exists! <a href='/signup'>Try again</a>"
         
-        # Save balance as a string immediately
+        # balance saved as string
         new_user = {'username': u, 'password': p, 'balance': '10000.0', 'stocks_held': ''}
         df = pd.concat([df, pd.DataFrame([new_user])], ignore_index=True)
         df.to_csv(DB_FILE, index=False)
@@ -83,11 +83,11 @@ def buy():
     if price <= 0:
         return "Ticker not found or API busy. <a href='/'>Go back</a>"
 
-    # CRITICAL: Read everything as a string (Object)
+    #reading as string
     df = pd.read_csv(DB_FILE, dtype=str)
     idx = df[df['username'] == session['username']].index[0]
     
-    # Convert ONLY for the math, then back to string
+    #convert for math
     current_balance = float(df.at[idx, 'balance'])
     
     if current_balance >= price:
@@ -126,7 +126,7 @@ def sell():
         current_stocks.remove(ticker)
         df.at[idx, 'stocks_held'] = ', '.join(current_stocks)
         
-        # Add the money back
+        # money added back
         current_balance = float(df.at[idx, 'balance'])
         df.at[idx, 'balance'] = str(round(current_balance + price, 2))
         
