@@ -1,4 +1,4 @@
-Project Name: TradeLeague
+Project Name: Tradeo
 
 Problem Statement ID: CS06SF 
 
@@ -18,7 +18,7 @@ Despite increasing awareness about investing, most students lack practical expos
 
 Proposed Solution
 
-TradeLeague is a Gamified Virtual Trading League for Students that allows users to trade stocks using virtual money in a simulated real-market environment. Students can participate in leagues, compete with peers, track performance through leaderboards, and earn badges and rewards. The platform combines learning with gamification, helping users understand trading concepts, risk management, and portfolio diversification in a fun and safe way.
+Tradeo is a Gamified Virtual Trading League for Students that allows users to trade stocks using virtual money in a simulated real-market environment. Students can participate in leagues, compete with peers, track performance through leaderboards, and earn badges and rewards. The platform combines learning with gamification, helping users understand trading concepts, and portfolio diversification in a fun and safe way.
 
 
 ---
@@ -47,8 +47,6 @@ Frontend:
 
 HTML, CSS
 
-Chart.js for portfolio visualization # not decided check again
-
 
 Backend:
 
@@ -58,6 +56,8 @@ Python, Flask, .CSV files for database
 APIs & Tools:
 
 Stock market data API (Finnhub)
+
+Google Gemeni API for News Compilation
 
 GitHub for version control
 
