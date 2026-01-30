@@ -35,15 +35,23 @@ def home():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # Force everything to strings so Pandas doesn't guess "float64"
     df = pd.read_csv(DB_FILE, dtype=str)
-    user_data = df[df['username'] == session['username']]
+    user_data = df[df['username'] == session['username']].iloc[0].to_dict()
     
-    if user_data.empty:
-        session.clear()
-        return redirect(url_for('login'))
-        
-    return render_template('index.html', user=user_data.iloc[0].to_dict())
+    # Calculate Portfolio Value
+    stocks_held_raw = str(user_data.get('stocks_held', ''))
+    stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
+    
+    portfolio_value = 0.0
+    price_cache = {} # To avoid hitting the API multiple times for the same stock
+
+    for ticker in stocks_list:
+        if ticker not in price_cache:
+            price_cache[ticker] = get_stock_price(ticker)
+        portfolio_value += price_cache[ticker]
+    
+    # Pass both the user data and the calculated portfolio value to the HTML
+    return render_template('index.html', user=user_data, portfolio_value=portfolio_value)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -78,6 +86,41 @@ def market():
     if 'username' not in session:
         return redirect(url_for('login'))
     return render_template('market.html')
+
+@app.route('/leaderboard')
+def leaderboard():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    df = pd.read_csv(DB_FILE, dtype=str)
+    leaderboard_entries = []
+    price_cache = {}
+
+    for _, row in df.iterrows():
+        cash = float(row['balance'])
+        stocks_held_raw = str(row['stocks_held'])
+        stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', ''] else []
+        
+        portfolio_stock_value = 0.0
+        for ticker in stocks_list:
+            if ticker not in price_cache:
+                price_cache[ticker] = get_stock_price(ticker)
+            portfolio_stock_value += price_cache[ticker]
+        
+        # Calculate Total Net Worth (Cash + Stock Value)
+        total_net_worth = cash + portfolio_stock_value
+        
+        leaderboard_entries.append({
+            'username': row['username'],
+            'cash': cash,
+            'stock_value': portfolio_stock_value,
+            'net_worth': total_net_worth
+        })
+
+    # CRITICAL CHANGE: Sort by net_worth instead of cash
+    sorted_leaderboard = sorted(leaderboard_entries, key=lambda x: x['net_worth'], reverse=True)
+    
+    return render_template('leaderboard.html', users=sorted_leaderboard)
 
 @app.route('/buy', methods=['POST'])
 def buy():

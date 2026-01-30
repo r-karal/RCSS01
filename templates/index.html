@@ -33,22 +33,26 @@
     </div>
 
     <div class="row g-4 justify-content-center">
-        <div class="col-md-5">
-            <div class="card portfolio-card shadow-sm p-4 h-100">
-                <h6 class="text-uppercase text-muted small fw-bold">Current User</h6>
-                <h3>{{ user.username }}</h3>
-                <hr>
-                <p class="mb-0 text-muted">Available Balance</p>
-                <h2 class="text-success fw-bold">${{ "{:,.2f}".format(user.balance|float) }}</h2>
-                
-                <div class="mt-4">
-                    <span class="badge bg-secondary mb-2">Current Holdings</span>
-                    <p class="p-3 bg-light rounded border text-dark font-monospace mb-0" style="min-height: 80px; font-size: 0.9rem;">
-                        {{ user.stocks_held if user.stocks_held else "No stocks owned." }}
-                    </p>
-                </div>
-            </div>
+       <div class="col-md-5">
+    <div class="card portfolio-card shadow-sm p-4 h-100">
+        <h6 class="text-uppercase text-muted small fw-bold">Current User</h6>
+        <h3>{{ user.username }}</h3>
+        <hr>
+        
+        <p class="mb-0 text-muted">Available Cash</p>
+        <h2 class="text-success fw-bold">${{ "{:,.2f}".format(user.balance|float) }}</h2>
+        
+        <p class="mb-0 mt-3 text-muted">Stock Portfolio Value</p>
+        <h4 class="text-primary fw-bold">${{ "{:,.2f}".format(portfolio_value) }}</h4>
+        
+        <div class="mt-4">
+            <span class="badge bg-secondary mb-2">Current Holdings</span>
+            <p class="p-3 bg-light rounded border text-dark font-monospace mb-0" style="min-height: 80px;">
+                {{ user.stocks_held if user.stocks_held and user.stocks_held != 'nan' else "No stocks owned." }}
+            </p>
         </div>
+    </div>
+</div>
 
         <div class="col-md-5">
             <div class="card trade-card shadow-sm p-4 h-100">
