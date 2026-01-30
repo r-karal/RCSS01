@@ -1,7 +1,9 @@
 Project Name: TradeLeague
 
 Problem Statement ID: CS06SF
+
 Team Name: Team AlphaCoders
+
 College Name: Rajagiri College of Social Sciences
 
 
