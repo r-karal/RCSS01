@@ -82,10 +82,25 @@ def signup():
 
 @app.route('/market')
 def market():
-    """Displays the market trends and stock graphs page"""
     if 'username' not in session:
         return redirect(url_for('login'))
-    return render_template('market.html')
+    
+    # Read database
+    df = pd.read_csv(DB_FILE, dtype=str)
+    user_data = df[df['username'] == session['username']].iloc[0].to_dict()
+    
+    # Calculate Portfolio Value for the sidebar
+    stocks_held_raw = str(user_data.get('stocks_held', ''))
+    stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
+    
+    portfolio_value = 0.0
+    price_cache = {}
+    for ticker in stocks_list:
+        if ticker not in price_cache:
+            price_cache[ticker] = get_stock_price(ticker)
+        portfolio_value += price_cache[ticker]
+        
+    return render_template('market.html', user=user_data, portfolio_value=portfolio_value)
 
 @app.route('/leaderboard')
 def leaderboard():
@@ -152,7 +167,7 @@ def buy():
         # Update balance
         df.at[idx, 'balance'] = str(round(current_balance - total_cost, 2))
         
-        # FIX 2: This is the "asscheeks" part—we must repeat the ticker 'quantity' times
+        # FIX 2: This is the part—we must repeat the ticker 'quantity' times
         new_shares_string = ", ".join([ticker] * quantity)
         
         current_stocks = str(df.at[idx, 'stocks_held'])
@@ -164,7 +179,7 @@ def buy():
             df.at[idx, 'stocks_held'] = f"{current_stocks}, {new_shares_string}"
         
         df.to_csv(DB_FILE, index=False)
-        return redirect(url_for('home'))
+        return redirect(request.referrer or url_for('home'))
         
     return f"Insufficient funds for {quantity} shares! <a href='/'>Go back</a>"
 
@@ -189,28 +204,22 @@ def sell():
     df = pd.read_csv(DB_FILE, dtype=str)
     idx = df[df['username'] == session['username']].index[0]
     
-    # Split holdings into a list and clean up whitespace
     stocks_held_raw = str(df.at[idx, 'stocks_held'])
     current_stocks = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', ''] else []
     
-    # CHECK: Do you actually have enough shares?
     owned_count = current_stocks.count(ticker)
     
     if owned_count >= qty_to_sell:
-        # Loop to remove the exact number of shares requested
+        
         for _ in range(qty_to_sell):
             current_stocks.remove(ticker)
-        
-        # Save the shortened list back as a string
         df.at[idx, 'stocks_held'] = ', '.join(current_stocks)
-        
-        # Add the TOTAL value (Price * Qty) back to balance
         current_balance = float(df.at[idx, 'balance'])
         total_sale_value = price * qty_to_sell
         df.at[idx, 'balance'] = str(round(current_balance + total_sale_value, 2))
         
         df.to_csv(DB_FILE, index=False)
-        return redirect(url_for('home'))
+        return redirect(request.referrer or url_for('home'))
     
     return f"Error: You only own {owned_count} shares of {ticker}! <a href='/'>Go back</a>"
 

@@ -5,58 +5,95 @@
     <title>Market Trends - CodeSprint 2026</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #131722; color: white; }
+        body { background-color: #131722; color: white; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
         .nav-link { color: #d1d4dc !important; }
+        .trade-sidebar { background-color: #1c2130; border-left: 1px solid #363c4e; height: 100vh; position: sticky; top: 0; }
+        .form-control { background-color: #2a2e39; border: 1px solid #434651; color: white; }
+        .form-control:focus { background-color: #2a2e39; color: white; border-color: #2962ff; box-shadow: none; }
     </style>
 </head>
 <body>
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
-    <div class="container">
+    <div class="container-fluid px-4">
         <a class="navbar-brand" href="/">🚀 Virtual Trader</a>
-        <div class="navbar-nav">
+        <div class="navbar-nav ms-auto">
             <a class="nav-link" href="/">Dashboard</a>
+            <a class="nav-link" href="/leaderboard">Leaderboard</a>
         </div>
     </div>
 </nav>
 
-<div class="container py-5">
-    <h2 class="mb-4">Live Stocks View</h2>
-    
-    <div class="container-fluid py-5"> <h2 class="mb-4 text-center">Trending Stocks</h2>
-    
-    <div class="tradingview-widget-container" style="height: 800px; width: 100%;">
-        <div id="tradingview_chart" style="height: 100%; width: 100%;"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-        <script type="text/javascript">
-    new TradingView.widget({
-        "autosize": true,
-        "symbol": "NASDAQ:AMD", // This is just the starting point
-        "interval": "D",
-        "timezone": "Etc/UTC",
-        "theme": "dark",
-        "style": "1",
-        "locale": "en",
-        "toolbar_bg": "#f1f3f6",
-        "enable_publishing": false,
-        "allow_symbol_change": true,   // UNLOCKS the search bar
-        "show_symbol_search": true,    // Adds the search icon
-        "save_image": true,
-        "watchlist": [                 // Pre-loads a list for quick clicking
-        "NASDAQ:AAPL",
-        "NASDAQ:TSLA",
-        "NASDAQ:NVDA",
-        "NASDAQ:AMZN",
-        "NASDAQ:GOOGL"
-    ],
-    "container_id": "tradingview_chart"
-});
-</script>
-        </script>
-    </div>
-    </div>
-    <div class="mt-4 text-center">
-        <a href="/" class="btn btn-primary btn-lg">Back to Trading</a>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-9 p-4">
+            <h2 class="mb-4">Live Market View</h2>
+            <div class="tradingview-widget-container shadow-lg" style="height: 75vh; width: 100%; border-radius: 8px; overflow: hidden;">
+                <div id="tradingview_chart" style="height: 100%; width: 100%;"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+                <script type="text/javascript">
+                new TradingView.widget({
+                    "autosize": true,
+                    "symbol": "NASDAQ:AMD",
+                    "interval": "D",
+                    "timezone": "Etc/UTC",
+                    "theme": "dark",
+                    "style": "1",
+                    "locale": "en",
+                    "toolbar_bg": "#f1f3f6",
+                    "enable_publishing": false,
+                    "allow_symbol_change": true,
+                    "show_symbol_search": true,
+                    "save_image": true,
+                    "watchlist": ["NASDAQ:AAPL","NASDAQ:TSLA","NASDAQ:NVDA","NASDAQ:AMZN","NASDAQ:GOOGL"],
+                    "container_id": "tradingview_chart"
+                });
+                </script>
+            </div>
+        </div>
+
+        <div class="col-lg-3 trade-sidebar p-4 shadow-lg">
+            <h4 class="mb-4 text-center">Quick Trade</h4>
+            
+            <div class="card bg-dark border-secondary p-3 mb-4 text-center">
+                <div class="small text-muted text-uppercase">Available Cash</div>
+                <div class="h4 text-success fw-bold mb-2">${{ "{:,.2f}".format(user.balance|float) }}</div>
+                <div class="small text-muted text-uppercase">Portfolio Value</div>
+                <div class="h5 text-primary">${{ "{:,.2f}".format(portfolio_value) }}</div>
+            </div>
+
+            <hr class="border-secondary">
+
+            <form action="/buy" method="POST" class="mb-4">
+                <h6 class="text-primary mb-3">Buy Position</h6>
+                <div class="mb-2">
+                    <input type="text" name="ticker" class="form-control" placeholder="Symbol (e.g. AAPL)" required>
+                </div>
+                <div class="mb-3">
+                    <input type="number" name="quantity" class="form-control" placeholder="Quantity" min="1" value="1" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold">Execute Buy</button>
+            </form>
+
+            <hr class="border-secondary">
+
+            <form action="/sell" method="POST">
+                <h6 class="text-danger mb-3">Sell Position</h6>
+                <div class="mb-2">
+                    <input type="text" name="ticker" class="form-control" placeholder="Symbol (e.g. AAPL)" required>
+                </div>
+                <div class="mb-3">
+                    <input type="number" name="quantity" class="form-control" placeholder="Quantity" min="1" value="1" required>
+                </div>
+                <button type="submit" class="btn btn-danger w-100 fw-bold">Execute Sell</button>
+            </form>
+            
+            <div class="mt-5">
+                <a href="/" class="btn btn-outline-light w-100 btn-sm">Return to Dashboard</a>
+            </div>
+        </div>
     </div>
 </div>
+
 </body>
 </html>
