@@ -70,6 +70,8 @@ Download/Git Clone repository
 
 Run run.bat file
 
+Open shown link in web browser
+
 
 
 ---
