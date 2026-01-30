@@ -80,7 +80,7 @@ Open shown link in web browser
 
 Target Users:
 
-College students and beginners interested in stock market learning
+Sstudents and beginners interested in stock market learning
 
 
 ##User Interaction:
@@ -89,7 +89,7 @@ Users create an account and receive virtual capital
 
 Buy and sell stocks in a simulated market
 
-Join leagues and view rankings
+View rankings and get achievements
 
 Earn rewards and track learning progress
 
@@ -114,4 +114,4 @@ Bridges the gap between theory and practical knowledge
 
 Presentation 
 
-Slides: To be added
+Slides: https://drive.google.com/file/d/1VWHkTj5MJHbeUGn994O72HsIhSzcMxrO/view
