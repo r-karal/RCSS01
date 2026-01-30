@@ -146,10 +146,10 @@
         <span class="tradeo navbar-brand mb-0 h1"><img src="static/aught.png" style="width: 40px;height: 40px;"></span>
         <div class="d-flex align-items-center">
             <span class="text-light me-3">Welcome, {{ user.username }}</span>
-            <a href="/market" class="  btn-top">Market View</a>
-            <a href="/leaderboard" class="  btn-top">Leaderboard</a>
-             <a href="/news" class="btn btn-outline-warning btn-sm me-2">News</a>
-            <a href="/logout" class="  btn-top">Sign Out</a>
+            <a href="/market" class="btn-top">Market View</a>
+            <a href="/leaderboard" class="btn-top">Leaderboard</a>
+            <a href="/news" class="btn btn-outline-warning btn-sm me-2">News</a>
+            <a href="/logout" class="btn-top">Sign Out</a>
         </div>
     </div>
 </nav>
@@ -161,29 +161,50 @@
         <p class="blk-txt smal">Virtual Market Simulator v1.67 [NASDAQ Based]</p>
     </div>
 
-    <div class="row g-4 justify-content-center">
-       <div class="col-md-5">
-    <div class="card portfolio-card shadow-sm p-4 h-100">
-        <span class ="blk-txt">Current User: </span>
-        <h3>{{ user.username }}</h3>
-        <hr>
-
-        <p class="blk-txt mb-0 ">Available Cash: </p>
-        <h2 class="amnt">${{ "{:,.2f}".format(user.balance|float) }}</h2>
-
-        <p class="blk-txt mb-0 mt-3 ">Stock Portfolio Value: </p>
-        <h4 class="amnt">${{ "{:,.2f}".format(portfolio_value) }}</h4>
-
-        <div class="mt-4">
-            <span class="blk-txt">Current Holdings: </span>
-            <p class="p-3" style="min-height: 80px;">
-                {{ user.stocks_held if user.stocks_held and user.stocks_held != 'nan' else "No stocks owned." }}
-            </p>
-        </div>
-    </div>
-</div>
-
+    <div class="row g-4 justify-content-center align-items-stretch">
+        
         <div class="col-md-5">
+            <div class="card portfolio-card shadow-sm p-4 h-100">
+                <span class="blk-txt">Current User: </span>
+                <h3>{{ user.username }}</h3>
+                <hr>
+
+                <p class="blk-txt mb-0 ">Available Cash: </p>
+                <h2 class="amnt">${{ "{:,.2f}".format(user.balance|float) }}</h2>
+
+                <p class="blk-txt mb-0 mt-3 ">Stock Portfolio Value: </p>
+                <h4 class="amnt">${{ "{:,.2f}".format(portfolio_value) }}</h4>
+
+                <div class="mt-4">
+                    <span class="blk-txt">Current Holdings: </span>
+                    <p class="p-3" style="min-height: 80px;">
+                        {# This fix removes the "nan" text when empty #}
+                        {% if user.stocks_held|string != 'nan' and user.stocks_held|string|trim != '' %}
+                            {{ user.stocks_held }}
+                        {% else %}
+                            No stocks owned.
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="mt-4">
+                    <span class="blk-txt">🏆 Achievements:</span>
+                    <div class="p-3 d-flex flex-wrap gap-2 mt-2" style="min-height: 60px;">
+                        {% set ach_text = user.achievements|string %}
+                        {% if ach_text and ach_text != 'nan' and ach_text != '' %}
+                            {% for achievement in ach_text.split(',') %}
+                                {% if achievement.strip() %}
+                                    <span class="badge" style="background: #9dbe56; color: #181926; border: 1px solid #eebebe; padding: 8px;">
+                                        {{ achievement.strip() }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <span class="smal" style="color: rgba(238, 190, 190, 0.5);">No achievements earned yet.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div> </div> <div class="col-md-5">
             <div class="card trade-card shadow-sm p-4 h-100">
                 <h4 class="mb-4">Execute Trade</h4>
 
@@ -192,15 +213,15 @@
                         <label class="b2 form-label fw-bold">Buy Stocks</label>
                         <div class="row g-2">
                             <div class="col-8">
-                                <input type="text" name="ticker" class="form-control " placeholder="Symbol (e.g. AAPL)" required>
+                                <input type="text" name="ticker" class="form-control" placeholder="Symbol (e.g. AAPL)" required>
                             </div>
                             <div class="col-4">
-                                <input type="number" name="quantity" class="form-control " placeholder="Qty" min="1" value="1" required>
+                                <input type="number" name="quantity" class="form-control" placeholder="Qty" min="1" value="1" required>
                             </div>
                         </div>
                         <div class="form-text text-white-50 mt-2">Note: Trading at Latest Market Price</div>
                     </div>
-                    <button type="submit" class="bbtn  btn-lg w-100">Buy Shares</button>
+                    <button type="submit" class="bbtn btn-lg w-100">Buy Shares</button>
                 </form>
 
                 <hr class="my-4 border-secondary">
@@ -210,7 +231,7 @@
                         <label class="b1 form-label fw-bold">Sell Stocks</label>
                         <div class="row g-2">
                             <div class="col-8">
-                                <input type="text" name="ticker" class="form-control " placeholder="Symbol (e.g. TSLA)" required>
+                                <input type="text" name="ticker" class="form-control" placeholder="Symbol (e.g. TSLA)" required>
                             </div>
                             <div class="col-4">
                                 <input type="number" name="quantity" class="form-control" placeholder="Qty" min="1" value="1" required>
@@ -218,12 +239,7 @@
                         </div>
                         <div class="form-text text-white-50 mt-2">Note: Sells at current market price</div>
                     </div>
-                    <button type="submit" class="sbtn  btn-lg w-100">Sell Shares</button>
+                    <button type="submit" class="sbtn btn-lg w-100">Sell Shares</button>
                 </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-</body>
+            </div> </div> </div> </div> </body>
 </html>
