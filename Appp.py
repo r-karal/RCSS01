@@ -6,7 +6,7 @@ import requests
 app = Flask(__name__)
 app.secret_key = 'codesprint_hackathon_2026'
 
-# Config for automatic sign-out
+# Configuration for automatic sign-out
 app.config.update(
     SESSION_PERMANENT=False,
     SESSION_COOKIE_HTTPONLY=True,
@@ -35,7 +35,7 @@ def home():
     if 'username' not in session:
         return redirect(url_for('login'))
     
-    # forcing to string for pandas
+    # Force everything to strings so Pandas doesn't guess "float64"
     df = pd.read_csv(DB_FILE, dtype=str)
     user_data = df[df['username'] == session['username']]
     
@@ -65,12 +65,19 @@ def signup():
         if u in df['username'].values:
             return "Exists! <a href='/signup'>Try again</a>"
         
-        # balance saved as string
+        # Save balance as a string immediately
         new_user = {'username': u, 'password': p, 'balance': '10000.0', 'stocks_held': ''}
         df = pd.concat([df, pd.DataFrame([new_user])], ignore_index=True)
         df.to_csv(DB_FILE, index=False)
         return redirect(url_for('login'))
     return render_template('signup.html')
+
+@app.route('/market')
+def market():
+    """Displays the market trends and stock graphs page"""
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('market.html')
 
 @app.route('/buy', methods=['POST'])
 def buy():
@@ -78,32 +85,45 @@ def buy():
         return redirect(url_for('login'))
 
     ticker = request.form.get('ticker').upper()
-    price = get_stock_price(ticker)
     
+    # FIX 1: Ensure we are grabbing the quantity as an integer
+    try:
+        quantity = int(request.form.get('quantity', 1))
+    except ValueError:
+        return "Invalid quantity! <a href='/'>Go back</a>"
+        
+    price = get_stock_price(ticker)
     if price <= 0:
-        return "Ticker not found or API busy. <a href='/'>Go back</a>"
+        return "Ticker not found. <a href='/'>Go back</a>"
 
-    #reading as string
+    # Total cost math
+    total_cost = price * quantity
+
+    # Read with dtype=str to keep AAPL from crashing the float64 column
     df = pd.read_csv(DB_FILE, dtype=str)
     idx = df[df['username'] == session['username']].index[0]
     
-    #convert for math
     current_balance = float(df.at[idx, 'balance'])
     
-    if current_balance >= price:
-        new_balance = round(current_balance - price, 2)
-        df.at[idx, 'balance'] = str(new_balance)
+    if current_balance >= total_cost:
+        # Update balance
+        df.at[idx, 'balance'] = str(round(current_balance - total_cost, 2))
         
-        # Save the stock ticker as a string
+        # FIX 2: This is the "asscheeks" part—we must repeat the ticker 'quantity' times
+        new_shares_string = ", ".join([ticker] * quantity)
+        
         current_stocks = str(df.at[idx, 'stocks_held'])
+        
+        # Handle the very first purchase vs adding to an existing list
         if current_stocks in ['nan', 'None', '', ' ']:
-            df.at[idx, 'stocks_held'] = ticker
+            df.at[idx, 'stocks_held'] = new_shares_string
         else:
-            df.at[idx, 'stocks_held'] = f"{current_stocks}, {ticker}"
+            df.at[idx, 'stocks_held'] = f"{current_stocks}, {new_shares_string}"
         
         df.to_csv(DB_FILE, index=False)
         return redirect(url_for('home'))
-    return "Insufficient funds! <a href='/'>Go back</a>"
+        
+    return f"Insufficient funds for {quantity} shares! <a href='/'>Go back</a>"
 
 @app.route('/sell', methods=['POST'])
 def sell():
@@ -111,30 +131,46 @@ def sell():
         return redirect(url_for('login'))
 
     ticker = request.form.get('ticker').upper()
-    price = get_stock_price(ticker)
     
+    # Grab the quantity from your new HTML input
+    try:
+        qty_to_sell = int(request.form.get('quantity', 1))
+    except ValueError:
+        return "Invalid quantity! <a href='/'>Go back</a>"
+        
+    price = get_stock_price(ticker)
     if price <= 0:
-        return "API Error! Could not get current price to sell. <a href='/'>Go back</a>"
+        return "API Error! Could not get price. <a href='/'>Go back</a>"
 
+    # Read as string to prevent the float64 crash
     df = pd.read_csv(DB_FILE, dtype=str)
     idx = df[df['username'] == session['username']].index[0]
     
-    current_stocks = str(df.at[idx, 'stocks_held']).split(', ')
+    # Split holdings into a list and clean up whitespace
+    stocks_held_raw = str(df.at[idx, 'stocks_held'])
+    current_stocks = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', ''] else []
     
-    if ticker in current_stocks:
-        # Remove ONE instance of the stock
-        current_stocks.remove(ticker)
+    # CHECK: Do you actually have enough shares?
+    owned_count = current_stocks.count(ticker)
+    
+    if owned_count >= qty_to_sell:
+        # Loop to remove the exact number of shares requested
+        for _ in range(qty_to_sell):
+            current_stocks.remove(ticker)
+        
+        # Save the shortened list back as a string
         df.at[idx, 'stocks_held'] = ', '.join(current_stocks)
         
-        # money added back
+        # Add the TOTAL value (Price * Qty) back to balance
         current_balance = float(df.at[idx, 'balance'])
-        df.at[idx, 'balance'] = str(round(current_balance + price, 2))
+        total_sale_value = price * qty_to_sell
+        df.at[idx, 'balance'] = str(round(current_balance + total_sale_value, 2))
         
         df.to_csv(DB_FILE, index=False)
         return redirect(url_for('home'))
-    else:
-        return "You don't own this stock! <a href='/'>Go back</a>"
-        
+    
+    return f"Error: You only own {owned_count} shares of {ticker}! <a href='/'>Go back</a>"
+
 @app.route('/logout')
 def logout():
     session.clear()

@@ -9,6 +9,7 @@
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         .portfolio-card { border-radius: 15px; border: none; background: white; }
         .trade-card { border-radius: 15px; border: none; background: #212529; color: white; }
+        .form-control:focus { box-shadow: none; border-color: #0d6efd; }
     </style>
 </head>
 <body>
@@ -18,6 +19,7 @@
         <span class="navbar-brand mb-0 h1">🚀 Virtual Trader</span>
         <div class="d-flex align-items-center">
             <span class="text-light me-3">Welcome, {{ user.username }}</span>
+            <a href="/market" class="btn btn-outline-info btn-sm me-2">Market View</a>
             <a href="/leaderboard" class="btn btn-outline-light btn-sm me-2">Leaderboard</a>
             <a href="/logout" class="btn btn-danger btn-sm">Sign Out</a>
         </div>
@@ -27,12 +29,12 @@
 <div class="container py-5">
     <div class="text-center mb-5">
         <h1 class="display-5 fw-bold text-primary">Student Trading League</h1>
-        <p class="text-muted">Virtual Market Simulator v1.0</p>
+        <p class="text-muted">Virtual Market Simulator v1.67 [NASDAQ Based]</p>
     </div>
 
     <div class="row g-4 justify-content-center">
         <div class="col-md-5">
-            <div class="card portfolio-card shadow-sm p-4">
+            <div class="card portfolio-card shadow-sm p-4 h-100">
                 <h6 class="text-uppercase text-muted small fw-bold">Current User</h6>
                 <h3>{{ user.username }}</h3>
                 <hr>
@@ -40,8 +42,8 @@
                 <h2 class="text-success fw-bold">${{ "{:,.2f}".format(user.balance|float) }}</h2>
                 
                 <div class="mt-4">
-                    <span class="badge bg-secondary">Holdings:</span>
-                    <p class="mt-2 p-3 bg-light rounded border text-dark font-monospace" style="min-height: 60px;">
+                    <span class="badge bg-secondary mb-2">Current Holdings</span>
+                    <p class="p-3 bg-light rounded border text-dark font-monospace mb-0" style="min-height: 80px; font-size: 0.9rem;">
                         {{ user.stocks_held if user.stocks_held else "No stocks owned." }}
                     </p>
                 </div>
@@ -49,16 +51,23 @@
         </div>
 
         <div class="col-md-5">
-            <div class="card trade-card shadow-sm p-4">
+            <div class="card trade-card shadow-sm p-4 h-100">
                 <h4 class="mb-4">Execute Trade</h4>
                 
                 <form action="/buy" method="POST">
                     <div class="mb-3">
                         <label class="form-label text-primary fw-bold">Buy Stocks</label>
-                        <input type="text" name="ticker" class="form-control form-control-lg" placeholder="e.g. AAPL" required>
-                        <div class="form-text text-white-50 mt-2">Note: Fixed Price $150.00/share</div>
+                        <div class="row g-2">
+                            <div class="col-8">
+                                <input type="text" name="ticker" class="form-control form-control-lg" placeholder="Symbol (e.g. AAPL)" required>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" name="quantity" class="form-control form-control-lg" placeholder="Qty" min="1" value="1" required>
+                            </div>
+                        </div>
+                        <div class="form-text text-white-50 mt-2">Note: Trading at Latest Market Price</div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100">Buy Share</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Buy Shares</button>
                 </form>
 
                 <hr class="my-4 border-secondary">
@@ -66,10 +75,17 @@
                 <form action="/sell" method="POST">
                     <div class="mb-3">
                         <label class="form-label text-danger fw-bold">Sell Stocks</label>
-                        <input type="text" name="ticker" class="form-control form-control-lg" placeholder="e.g. TSLA" required>
+                        <div class="row g-2">
+                            <div class="col-8">
+                                <input type="text" name="ticker" class="form-control form-control-lg" placeholder="Symbol (e.g. TSLA)" required>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" name="quantity" class="form-control form-control-lg" placeholder="Qty" min="1" value="1" required>
+                            </div>
+                        </div>
                         <div class="form-text text-white-50 mt-2">Note: Sells at current market price</div>
                     </div>
-                    <button type="submit" class="btn btn-danger btn-lg w-100">Sell Share</button>
+                    <button type="submit" class="btn btn-danger btn-lg w-100">Sell Shares</button>
                 </form>
             </div>
         </div>
