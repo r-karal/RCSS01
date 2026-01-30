@@ -157,6 +157,15 @@ def leaderboard():
         return redirect(url_for('login'))
 
     df = pd.read_csv(DB_FILE, dtype=str)
+    
+    # --- ADD THIS PART TO FIX THE ERROR ---
+    user_rows = df[df['username'] == session['username']]
+    if user_rows.empty:
+        session.clear()
+        return redirect(url_for('login'))
+    user_data = user_rows.iloc[0].to_dict()
+    # ---------------------------------------
+
     leaderboard_entries = []
     price_cache = {}
 
@@ -180,7 +189,9 @@ def leaderboard():
         })
 
     sorted_leaderboard = sorted(leaderboard_entries, key=lambda x: x['net_worth'], reverse=True)
-    return render_template('leaderboard.html', users=sorted_leaderboard)
+    
+    # PASS 'user=user_data' HERE
+    return render_template('leaderboard.html', user=user_data, users=sorted_leaderboard)
 
 @app.route('/news')
 def news_page():
