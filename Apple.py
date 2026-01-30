@@ -90,20 +90,37 @@ def home():
         return redirect(url_for('login'))
     
     df = pd.read_csv(DB_FILE, dtype=str)
-    user_data = df[df['username'] == session['username']].iloc[0].to_dict()
     
+    # Safety Check (Added this back so it doesn't crash)
+    user_rows = df[df['username'] == session['username']]
+    if user_rows.empty:
+        session.clear()
+        return redirect(url_for('login'))
+    
+    user_data = user_rows.iloc[0].to_dict()
+    
+    # 1. First, do your stock calculations
     stocks_held_raw = str(user_data.get('stocks_held', ''))
     stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
     
     portfolio_value = 0.0
     price_cache = {}
-
     for ticker in stocks_list:
         if ticker not in price_cache:
             price_cache[ticker] = get_stock_price(ticker)
         portfolio_value += price_cache[ticker]
     
-    return render_template('index.html', user=user_data, portfolio_value=portfolio_value)
+    # 2. Fetch the "Genuine News" (Place this BEFORE the return)
+    try:
+        news_data = finnhub_client.general_news('general', min_id=0)[:8]
+    except:
+        news_data = [] # Fallback if API fails
+
+    # 3. Use ONE return statement that sends EVERYTHING to the page
+    return render_template('index.html', 
+                           user=user_data, 
+                           portfolio_value=portfolio_value, 
+                           news=news_data)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -193,56 +210,7 @@ def leaderboard():
     # PASS 'user=user_data' HERE
     return render_template('leaderboard.html', user=user_data, users=sorted_leaderboard)
 
-@app.route('/news')
-def news_page():
-    if 'username' not in session:
-        return redirect(url_for('login'))
 
-    df = pd.read_csv(DB_FILE, dtype=str)
-    user_data = df[df['username'] == session['username']].iloc[0].to_dict()
-    
-    stocks_held_raw = str(user_data.get('stocks_held', ''))
-    stocks_list = [s.strip() for s in stocks_held_raw.split(',')] if stocks_held_raw not in ['nan', 'None', '', ' '] else []
-    
-    portfolio_value = 0.0
-    price_cache = {}
-    for ticker in stocks_list:
-        if ticker not in price_cache:
-            price_cache[ticker] = get_stock_price(ticker)
-        portfolio_value += price_cache[ticker]
-
-    try:
-        raw_news = finnhub_client.general_news('general', min_id=0)
-        headlines = [item['headline'] for item in raw_news[:10]]
-        
-        prompt = (
-            f"Analyze these market headlines: {headlines}. "
-            "1. Start with one word: 'BULLISH', 'BEARISH', or 'NEUTRAL'. "
-            "2. Provide 3-4 bite-sized bullet points summarizing the news. "
-            "Use HTML tags like <b> and <ul> for formatting."
-        )
-        
-        response = gemini_client.models.generate_content(
-            model='gemini-1.5-flash', 
-            contents=prompt
-        )
-        
-        full_text = response.text
-        sentiment = "NEUTRAL"
-        if "BULLISH" in full_text.upper(): sentiment = "BULLISH"
-        elif "BEARISH" in full_text.upper(): sentiment = "BEARISH"
-        
-        summary = full_text.replace("BULLISH", "").replace("BEARISH", "").replace("NEUTRAL", "").strip()
-    except Exception as e:
-        sentiment = "UNKNOWN"
-        summary = f"Error loading news: {str(e)}"
-
-    return render_template('news.html', 
-                           user=user_data, 
-                           portfolio_value=portfolio_value, 
-                           summary=summary, 
-                           sentiment=sentiment,
-                           now=datetime.datetime.now())
 
 @app.route('/buy', methods=['POST'])
 def buy():

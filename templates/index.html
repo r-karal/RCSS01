@@ -169,15 +169,14 @@
             
             <div class="dropdown">
                 <button class="btn btn-outline-light border-0" type="button" id="navMenu" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 1.5rem;">
-                    &#9776; </button>
+                    &#9776;
+                </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="navMenu" style="background: rgba(24, 25, 38, 0.95); backdrop-filter: blur(10px); border: 1px solid #eebebe;">
-                    <li><a class="dropdown-item blk-txt" href="/">Dashboard</a></li>
-                    <li><a class="dropdown-item blk-txt" href="/market">Market View</a></li>
-                    <li><a class="dropdown-item blk-txt" href="/leaderboard">Leaderboard</a></li>
-                    <li><a class="dropdown-item blk-txt" href="/news">Market News</a></li>
-                    <li><a class="dropdown-item blk-txt text-warning" href="/history">Trade History</a></li>
+                    <li><a class="dropdown-item nav-link-custom" href="/">Dashboard</a></li>
+                    <li><a class="dropdown-item nav-link-custom" href="/market">Market View</a></li>
+                    <li><a class="dropdown-item nav-link-custom" href="/leaderboard">Leaderboard</a></li>
                     <li><hr class="dropdown-divider border-secondary"></li>
-                    <li><a class="dropdown-item text-danger" href="/logout">Sign Out</a></li>
+                    <li><a class="dropdown-item text-danger fw-bold" href="/logout">Sign Out</a></li>
                 </ul>
             </div>
         </div>
@@ -208,7 +207,6 @@
                 <div class="mt-4">
                     <span class="blk-txt">Current Holdings: </span>
                     <p class="p-3" style="min-height: 80px;">
-                        {# This fix removes the "nan" text when empty #}
                         {% if user.stocks_held|string != 'nan' and user.stocks_held|string|trim != '' %}
                             {{ user.stocks_held }}
                         {% else %}
@@ -234,7 +232,10 @@
                         {% endif %}
                     </div>
                 </div>
-            </div> </div> <div class="col-md-5">
+            </div>
+        </div>
+
+        <div class="col-md-5">
             <div class="card trade-card shadow-sm p-4 h-100">
                 <h4 class="mb-4">Execute Trade</h4>
 
@@ -271,7 +272,35 @@
                     </div>
                     <button type="submit" class="sbtn btn-lg w-100">Sell Shares</button>
                 </form>
-            </div> </div> </div> </div> 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        </body>
+            </div>
+        </div>
+    </div> <div class="row justify-content-center mt-5">
+        <div class="col-md-10">
+            <div class="card shadow-sm p-4" style="background: rgba(24, 25, 38, 0.9); border: 1px solid #eebebe;">
+                <h3 class="mb-4" style="color: #eebebe; font-family: 'Playfair Display', serif;">LATEST FROM THE MARKET</h3>
+                
+                <div class="list-group list-group-flush">
+                    {% for item in news %}
+                    <div class="list-group-item bg-transparent border-secondary py-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <h5 class="mb-1">
+                                <a href="{{ item.url }}" target="_blank" style="color: #9dbe56; text-decoration: none; font-weight: bold;">
+                                    {{ item.headline }}
+                                </a>
+                            </h5>
+                            <span class="badge rounded-pill" style="background: #eebebe; color: #181926;">{{ item.source }}</span>
+                        </div>
+                        <p class="mt-2 mb-1" style="color: #ced4da; font-size: 0.95rem;">
+                            {{ item.summary[:200] }}...
+                        </p>
+                        <small style="color: rgba(238, 190, 190, 0.5);">{{ now.strftime('%Y-%m-%d %H:%M:%S') if now else "Just Now" }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>
