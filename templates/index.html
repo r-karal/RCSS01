@@ -4,50 +4,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeSprint 2026 - Virtual Trader</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .portfolio-card { border-radius: 15px; border: none; background: white; }
-        .trade-card { border-radius: 15px; border: none; background: #212529; color: white; }
-        .form-control:focus { box-shadow: none; border-color: #0d6efd; }
+            body {
+                min-height: 100vh;
+                background:
+                linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0), rgba(0,0,0,0)),url("/static/flowers-1.jpeg") no-repeat center center fixed;
+                background-size:cover;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: #eebebe;
+            }
+
+        .portfolio-card {
+             border: none;
+              background: rgba(0,0,0,0.6);
+              color:#eebebe;
+              backdrop-filter: blur(4px);
+              border-width: 2px;
+              border-color: #eebebe;
+              border-style: solid;
+            }
+
+        .trade-card {
+             border-radius: 5px;
+             border: none;
+              backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.6);
+            color: #eebebe;
+            border-width: 2px;
+              border-color: #eebebe;
+              border-style: solid;
+        }
+        .bigword{
+            color: #eebebe; !important
+        }
+        .smallword{
+            color: #eebebe; !important
+        }
+        .sbtn{
+            background: #ad2e24;
+            display: grid;
+            padding: 15px;
+            border-radius: 5px;
+            border-width: 0;
+        }
+        .b1{
+            color: #ad2e24;
+        }
+        .bbtn{
+            background: #9dbe56;
+            display: grid;
+            padding: 15px;
+            border-radius: 5px;
+            border-width: 0;
+
+        }
+        .form-control{
+            background: #181926;
+            border-radius: 5px;
+            border-style: solid;
+            border-color: #eebebe;
+            color: white;
+        }
+        .form-control:focus{
+            background: #181926;
+            border-radius: 5px;
+            border-style: solid;
+            border-color: #eebebe;
+            color: white;
+        }
+        .p-3{
+            background: #181926;
+            border-radius: 5px;
+            border-width: 1px;
+            border-style: solid;
+            border-color: #eebebe;
+            padding-bottom: 10px; !important
+        }
+        .text-success{
+            color: #9dbe56;
+        }
+        .b2{
+            color: #9dbe56;
+        }
+        .username{
+            color: #ffecec;
+            font-weight: 500;
+            font-size:xx-large;
+
+            font-style:;
+        }
+        .tradeo{
+            color: #eebebe;
+        }
+        .navbar{
+            min-width: 300px;;
+        }
+        .container{
+            background-image: url(flowers-1.jpeg);
+         }
+         .rounded{
+            background: red;
+         }
+         .blk-txt{
+            color: #fff0f0;
+            margin-top:3px;
+            margin-bottom: 3px;
+         }
+         .amnt{
+            color: #9dbe56;
+         }
+         .mb-4{
+            margin: 0 auto;
+         }
+         .btn-top{
+            color:#ffdede;
+            border-style: solid;
+            border-width: 1px;
+            border-radius: 5px;
+            border-color: #ffdede;
+            margin: 5px;
+            max-height: 40px;
+            padding: 5px;
+            backdrop-filter: blur(4px);
+            text-decoration: none;
+         }
+         .smal{
+            font-size: 16px;
+            filter:opacity(50%)
+         }
+
+
+
     </style>
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
+<nav class="navbar">
     <div class="container">
-        <span class="navbar-brand mb-0 h1">🚀 Virtual Trader</span>
+        <span class="tradeo navbar-brand mb-0 h1"><img src="static/aught.png" style="width: 40px;height: 40px;"></span>
         <div class="d-flex align-items-center">
             <span class="text-light me-3">Welcome, {{ user.username }}</span>
-            <a href="/market" class="btn btn-outline-info btn-sm me-2">Market View</a>
-            <a href="/leaderboard" class="btn btn-outline-light btn-sm me-2">Leaderboard</a>
-            <a href="/logout" class="btn btn-danger btn-sm">Sign Out</a>
+            <a href="/market" class="  btn-top">Market View</a>
+            <a href="/leaderboard" class="  btn-top">Leaderboard</a>
+            <a href="/logout" class="  btn-top">Sign Out</a>
         </div>
     </div>
 </nav>
 
 <div class="container py-5">
     <div class="text-center mb-5">
-        <h1 class="display-5 fw-bold text-primary">Student Trading League</h1>
-        <p class="text-muted">Virtual Market Simulator v1.67 [NASDAQ Based]</p>
+        <h1 class="display-5 fw-bold">TRADEO</h1>
+        <h2 class="moto display-5 fw-bold ">Simulate . Analyze . Trade</h2>
+        <p class="blk-txt smal">Virtual Market Simulator v1.67 [NASDAQ Based]</p>
     </div>
 
     <div class="row g-4 justify-content-center">
        <div class="col-md-5">
     <div class="card portfolio-card shadow-sm p-4 h-100">
-        <h6 class="text-uppercase text-muted small fw-bold">Current User</h6>
+        <span class ="blk-txt">Current User: </span>
         <h3>{{ user.username }}</h3>
         <hr>
-        
-        <p class="mb-0 text-muted">Available Cash</p>
-        <h2 class="text-success fw-bold">${{ "{:,.2f}".format(user.balance|float) }}</h2>
-        
-        <p class="mb-0 mt-3 text-muted">Stock Portfolio Value</p>
-        <h4 class="text-primary fw-bold">${{ "{:,.2f}".format(portfolio_value) }}</h4>
-        
+
+        <p class="blk-txt mb-0 ">Available Cash: </p>
+        <h2 class="amnt">${{ "{:,.2f}".format(user.balance|float) }}</h2>
+
+        <p class="blk-txt mb-0 mt-3 ">Stock Portfolio Value: </p>
+        <h4 class="amnt">${{ "{:,.2f}".format(portfolio_value) }}</h4>
+
         <div class="mt-4">
-            <span class="badge bg-secondary mb-2">Current Holdings</span>
-            <p class="p-3 bg-light rounded border text-dark font-monospace mb-0" style="min-height: 80px;">
+            <span class="blk-txt">Current Holdings: </span>
+            <p class="p-3" style="min-height: 80px;">
                 {{ user.stocks_held if user.stocks_held and user.stocks_held != 'nan' else "No stocks owned." }}
             </p>
         </div>
@@ -57,39 +185,39 @@
         <div class="col-md-5">
             <div class="card trade-card shadow-sm p-4 h-100">
                 <h4 class="mb-4">Execute Trade</h4>
-                
+
                 <form action="/buy" method="POST">
                     <div class="mb-3">
-                        <label class="form-label text-primary fw-bold">Buy Stocks</label>
+                        <label class="b2 form-label fw-bold">Buy Stocks</label>
                         <div class="row g-2">
                             <div class="col-8">
-                                <input type="text" name="ticker" class="form-control form-control-lg" placeholder="Symbol (e.g. AAPL)" required>
+                                <input type="text" name="ticker" class="form-control " placeholder="Symbol (e.g. AAPL)" required>
                             </div>
                             <div class="col-4">
-                                <input type="number" name="quantity" class="form-control form-control-lg" placeholder="Qty" min="1" value="1" required>
+                                <input type="number" name="quantity" class="form-control " placeholder="Qty" min="1" value="1" required>
                             </div>
                         </div>
                         <div class="form-text text-white-50 mt-2">Note: Trading at Latest Market Price</div>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100">Buy Shares</button>
+                    <button type="submit" class="bbtn  btn-lg w-100">Buy Shares</button>
                 </form>
 
                 <hr class="my-4 border-secondary">
 
                 <form action="/sell" method="POST">
                     <div class="mb-3">
-                        <label class="form-label text-danger fw-bold">Sell Stocks</label>
+                        <label class="b1 form-label fw-bold">Sell Stocks</label>
                         <div class="row g-2">
                             <div class="col-8">
-                                <input type="text" name="ticker" class="form-control form-control-lg" placeholder="Symbol (e.g. TSLA)" required>
+                                <input type="text" name="ticker" class="form-control " placeholder="Symbol (e.g. TSLA)" required>
                             </div>
                             <div class="col-4">
-                                <input type="number" name="quantity" class="form-control form-control-lg" placeholder="Qty" min="1" value="1" required>
+                                <input type="number" name="quantity" class="form-control" placeholder="Qty" min="1" value="1" required>
                             </div>
                         </div>
                         <div class="form-text text-white-50 mt-2">Note: Sells at current market price</div>
                     </div>
-                    <button type="submit" class="btn btn-danger btn-lg w-100">Sell Shares</button>
+                    <button type="submit" class="sbtn  btn-lg w-100">Sell Shares</button>
                 </form>
             </div>
         </div>
