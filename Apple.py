@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from google import genai
 import pandas as pd
 import os
 import requests
@@ -22,9 +21,8 @@ TRADES_FILE = os.path.join(BASE_DIR, 'transactions.csv')
 API_KEY = 'd5u4sppr01qtjet21380d5u4sppr01qtjet2138g'
 finnhub_client = finnhub.Client(api_key=API_KEY)
 
-gemini_client = genai.Client(api_key='AIzaSyCK_XQtbb3rsf5CCzaWuelH00S_qdURd-U')
 
-# --- UTILITY FUNCTIONS ---
+#Utility Functions
 
 def get_stock_price(symbol):
     try:
@@ -67,8 +65,7 @@ def check_achievements(username):
         df.at[idx, 'achievements'] = ", ".join(combined)
         df.to_csv(DB_FILE, index=False)
 
-# --- ROUTES ---
-
+#Routes to webpages
 @app.route('/')
 def home():
     if 'username' not in session:
@@ -188,7 +185,7 @@ def buy():
         df.at[idx, 'stocks_held'] = new_shares if current_stocks in ['nan', 'None', '', ' '] else f"{current_stocks}, {new_shares}"
         df.to_csv(DB_FILE, index=False)
         
-        # --- LOG TRANSACTION ---
+        #log transactions
         file_exists = os.path.isfile(TRADES_FILE)
         with open(TRADES_FILE, mode='a', newline='') as f:
             fieldnames = ['timestamp', 'username', 'ticker', 'type', 'quantity', 'price', 'total_cost']
@@ -235,7 +232,7 @@ def sell():
         current_balance = float(df.at[idx, 'balance'])
         df.at[idx, 'balance'] = str(round(current_balance + (price * qty_to_sell), 2))
         
-        # --- LOG TRANSACTION (CORRECTED INDENTATION & TYPE) ---
+        # log transaction
         file_exists = os.path.isfile(TRADES_FILE)
         with open(TRADES_FILE, mode='a', newline='') as f:
             fieldnames = ['timestamp', 'username', 'ticker', 'type', 'quantity', 'price', 'total_cost']
